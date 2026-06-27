@@ -46,6 +46,24 @@ npm run build    # build de producción en dist/
 npm run preview  # previsualizar el build
 ```
 
+> Nota: el proyecto está fijado a **Vite 5.4.x**. Si tu `npm install` instala una versión
+> distinta, ejecuta `npm ci` para instalar exactamente las versiones bloqueadas en
+> `package-lock.json`.
+
+## Versión offline (un solo archivo)
+
+Para obtener la app empaquetada en un **único `index.html` autocontenido** que se abre con
+doble clic, sin servidor y **sin conexión**:
+
+```bash
+npm run build:offline
+```
+
+Genera `dist/index.html` con todo el JS y el CSS inlineados (mediante
+[`vite-plugin-singlefile`](https://github.com/richardtallent/vite-plugin-singlefile)). Puedes
+renombrarlo (p. ej. `Visados-La-Rioja.html`), copiarlo a cualquier equipo y abrirlo
+directamente en el navegador. Los favoritos se guardan en el `localStorage` de ese navegador.
+
 ## Estructura
 
 ```
