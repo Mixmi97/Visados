@@ -2,13 +2,17 @@ import { useEffect } from 'react';
 import { Medication } from '../types';
 import { getVisadoStyle } from './visadoConfig';
 import { BadgeVisado } from './BadgeVisado';
+import { Highlight } from './highlight';
 
 interface Props {
   med: Medication | null;
   onClose: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
+  query?: string;
 }
 
-export function MedicationDetail({ med, onClose }: Props) {
+export function MedicationDetail({ med, onClose, isFavorite, onToggleFavorite, query }: Props) {
   useEffect(() => {
     if (!med) return;
     const handler = (e: KeyboardEvent) => {
@@ -43,15 +47,31 @@ export function MedicationDetail({ med, onClose }: Props) {
               </h2>
               <p className={`mt-1 text-sm font-medium ${style.text}`}>{style.nombre}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="flex-shrink-0 rounded-lg bg-white/70 p-2 text-slate-500 transition hover:bg-white hover:text-slate-700"
-              aria-label="Cerrar"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex flex-shrink-0 items-center gap-1.5">
+              {onToggleFavorite && (
+                <button
+                  onClick={onToggleFavorite}
+                  className={`rounded-lg bg-white/70 p-2 transition hover:bg-white ${
+                    isFavorite ? 'text-amber-400 hover:text-amber-500' : 'text-slate-400 hover:text-amber-400'
+                  }`}
+                  aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                  aria-pressed={isFavorite}
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                  </svg>
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="rounded-lg bg-white/70 p-2 text-slate-500 transition hover:bg-white hover:text-slate-700"
+                aria-label="Cerrar"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -75,7 +95,7 @@ export function MedicationDetail({ med, onClose }: Props) {
                     <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${style.badge}`}>
                       {i + 1}
                     </span>
-                    <span>{ind}</span>
+                    <span>{query ? <Highlight text={ind} query={query} /> : ind}</span>
                   </li>
                 ))}
               </ul>

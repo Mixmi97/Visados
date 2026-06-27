@@ -13,9 +13,17 @@ export interface Medication {
   notas?: string;
 }
 
-export type ActiveTab = 'medicamentos' | 'ned';
+export type ActiveTab = 'medicamentos' | 'favoritos' | 'ned';
+
+export type SearchMode = 'farmaco' | 'indicacion';
 
 export interface FilterState {
   tipoVisado: TipoVisado | 'TODOS';
   search: string;
+}
+
+/** Resultado de búsqueda; en modo "indicacion" incluye la indicación que coincidió. */
+export interface SearchResult {
+  med: Medication;
+  matchedIndicacion?: string;
 }
