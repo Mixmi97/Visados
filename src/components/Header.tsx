@@ -1,76 +1,85 @@
 import { ActiveTab } from '../types';
+import { Theme } from '../hooks/useTheme';
 
 interface Props {
   tab: ActiveTab;
   onTabChange: (t: ActiveTab) => void;
   totalMedicamentos: number;
   totalFavoritos: number;
+  theme: Theme;
+  onToggleTheme: () => void;
 }
 
-export function Header({ tab, onTabChange, totalMedicamentos, totalFavoritos }: Props) {
+export function Header({ tab, onTabChange, totalMedicamentos, totalFavoritos, theme, onToggleTheme }: Props) {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 text-white shadow-sm">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-base font-bold leading-tight text-slate-900 sm:text-lg">
-                Visados <span className="font-normal text-slate-400">·</span> La Rioja
-              </h1>
-              <p className="text-xs text-slate-500">
-                Medicamentos sujetos a condiciones restringidas de prescripción y/o dispensación
-              </p>
-            </div>
+    <header className="app">
+      <div className="head-top">
+        <div className="brand">
+          <span className="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2.5h8l4 4V21a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 21z" />
+              <path d="M14 2.5V6a1 1 0 0 0 1 1h3.5" />
+              <path d="M9 12.5h6M9 15.5h6M9 9.5h2.5" />
+              <path d="M8.6 18.6l1 1 2-2.2" />
+            </svg>
+          </span>
+          <div className="brand-txt">
+            <h1>
+              Visados <span className="sep">·</span> La Rioja
+            </h1>
+            <p>Medicamentos sujetos a condiciones restringidas de prescripción y/o dispensación</p>
           </div>
-
-          <nav className="flex items-center gap-1 rounded-xl bg-slate-100 p-1">
-            <TabButton active={tab === 'medicamentos'} onClick={() => onTabChange('medicamentos')}>
-              Medicamentos
-              <span className="ml-1.5 rounded-md bg-white/70 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500">
-                {totalMedicamentos}
-              </span>
-            </TabButton>
-            <TabButton active={tab === 'favoritos'} onClick={() => onTabChange('favoritos')}>
-              <svg
-                className={`h-3.5 w-3.5 ${tab === 'favoritos' ? 'text-amber-400' : 'text-slate-400'}`}
-                viewBox="0 0 24 24"
-                fill={totalFavoritos > 0 ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+        </div>
+        <div className="head-actions">
+          <span className="region-pill">
+            <b>SERIS</b> · Servicio Riojano de Salud
+          </span>
+          <button
+            className="theme-btn"
+            onClick={onToggleTheme}
+            title="Cambiar tema"
+            aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          >
+            {theme === 'dark' ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 14.5A8 8 0 1 1 9.5 4a6.3 6.3 0 0 0 10.5 10.5z" />
               </svg>
-              Favoritos
-              {totalFavoritos > 0 && (
-                <span className="ml-1 rounded-md bg-white/70 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500">
-                  {totalFavoritos}
-                </span>
-              )}
-            </TabButton>
-            <TabButton active={tab === 'ned'} onClick={() => onTabChange('ned')}>
-              Nutrición Enteral (NED)
-            </TabButton>
-          </nav>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <circle cx="12" cy="12" r="4.2" />
+                <path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
+      <nav className="tabs" role="tablist" aria-label="Secciones">
+        <button
+          className="tab"
+          role="tab"
+          aria-selected={tab === 'medicamentos'}
+          onClick={() => onTabChange('medicamentos')}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+            <path d="M3.5 9.5h17M8.5 9.5v10" />
+          </svg>
+          Medicamentos <span className="cnt num">{totalMedicamentos}</span>
+        </button>
+        <button className="tab" role="tab" aria-selected={tab === 'favoritos'} onClick={() => onTabChange('favoritos')}>
+          <svg viewBox="0 0 24 24" fill={totalFavoritos > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+            <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z" />
+          </svg>
+          Favoritos <span className="cnt num">{totalFavoritos}</span>
+        </button>
+        <button className="tab" role="tab" aria-selected={tab === 'ned'} onClick={() => onTabChange('ned')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M9 3.5h6M10 3.5v3.2L6.4 15a3 3 0 0 0 2.8 4.5h5.6A3 3 0 0 0 17.6 15L14 6.7V3.5" />
+            <path d="M7.6 12.5h8.8" />
+          </svg>
+          Nutrición Enteral <span className="cnt">NED</span>
+        </button>
+      </nav>
     </header>
-  );
-}
-
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-        active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-      }`}
-    >
-      {children}
-    </button>
   );
 }

@@ -1,192 +1,130 @@
 import { useEffect } from 'react';
 import { Medication } from '../types';
-import { getVisadoStyle } from './visadoConfig';
+import { getVisadoInfo } from './visadoConfig';
 import { BadgeVisado } from './BadgeVisado';
 import { Highlight } from './highlight';
 
 interface Props {
-  med: Medication | null;
+  med: Medication;
   onClose: () => void;
-  isFavorite?: boolean;
-  onToggleFavorite?: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
   query?: string;
 }
 
+const StarIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+    <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z" />
+  </svg>
+);
+
 export function MedicationDetail({ med, onClose, isFavorite, onToggleFavorite, query }: Props) {
   useEffect(() => {
-    if (!med) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handler);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handler);
-      document.body.style.overflow = '';
-    };
-  }, [med, onClose]);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
 
-  if (!med) return null;
-  const style = getVisadoStyle(med.tipoVisado);
+  const info = getVisadoInfo(med.tipoVisado);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
-      <aside className="detail-scroll relative flex h-full w-full max-w-xl flex-col overflow-y-auto bg-white shadow-2xl animate-[slideIn_0.2s_ease-out]">
-        {/* Cabecera */}
-        <div className={`sticky top-0 z-10 border-b border-slate-100 ${style.soft} px-6 py-5`}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <BadgeVisado tipo={med.tipoVisado} soloMayores75={med.soloMayores75} />
-              <h2 className="mt-2 text-xl font-bold leading-tight text-slate-900">
-                {med.principioActivo}
-              </h2>
-              <p className={`mt-1 text-sm font-medium ${style.text}`}>{style.nombre}</p>
-            </div>
-            <div className="flex flex-shrink-0 items-center gap-1.5">
-              {onToggleFavorite && (
-                <button
-                  onClick={onToggleFavorite}
-                  className={`rounded-lg bg-white/70 p-2 transition hover:bg-white ${
-                    isFavorite ? 'text-amber-400 hover:text-amber-500' : 'text-slate-400 hover:text-amber-400'
-                  }`}
-                  aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-                  aria-pressed={isFavorite}
-                >
-                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-                  </svg>
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="rounded-lg bg-white/70 p-2 text-slate-500 transition hover:bg-white hover:text-slate-700"
-                aria-label="Cerrar"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-6 px-6 py-6">
-          {/* Resumen prescriptor / duración */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <InfoBox
-              titulo="Quién lo prescribe"
-              icon="user"
-              valor={med.prescriptor}
-            />
-            <InfoBox titulo="Duración de la autorización" icon="clock" valor={med.duracion} />
-          </div>
-
-          {/* Indicaciones */}
-          {med.indicaciones.length > 0 && (
-            <Section titulo="Indicaciones aprobadas" count={med.indicaciones.length}>
-              <ul className="space-y-2">
-                {med.indicaciones.map((ind, i) => (
-                  <li key={i} className="flex gap-3 text-sm leading-relaxed text-slate-700">
-                    <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${style.badge}`}>
-                      {i + 1}
-                    </span>
-                    <span>{query ? <Highlight text={ind} query={query} /> : ind}</span>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
-
-          {/* Criterios a valorar */}
-          {med.criteriosValidacion.length > 0 && (
-            <Section titulo="Criterios a valorar para su validación" count={med.criteriosValidacion.length}>
-              <ul className="space-y-2">
-                {med.criteriosValidacion.map((c, i) => (
-                  <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-slate-600">
-                    <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{c}</span>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
-
-          {/* Presentaciones */}
-          <Section titulo="Nombre y presentaciones" count={med.presentaciones.length}>
-            <div className="flex flex-wrap gap-2">
-              {med.presentaciones.map((p) => (
-                <span
-                  key={p}
-                  className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200"
-                >
-                  {p}
-                </span>
-              ))}
-            </div>
-          </Section>
-
-          {/* Notas */}
-          {med.notas && (
-            <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-100">
-              <span className="font-semibold">Nota: </span>
-              {med.notas}
-            </div>
-          )}
-
-          {/* Significado del tipo de visado */}
-          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Tipo de visado · {style.label}
-            </p>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{style.descripcion}</p>
-          </div>
-        </div>
-      </aside>
-
-      <style>{`@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
-    </div>
-  );
-}
-
-function Section({ titulo, count, children }: { titulo: string; count?: number; children: React.ReactNode }) {
-  return (
-    <div>
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-        {titulo}
-        {count !== undefined && (
-          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500">
-            {count}
-          </span>
-        )}
-      </h3>
-      {children}
-    </div>
-  );
-}
-
-function InfoBox({ titulo, valor, icon }: { titulo: string; valor: string; icon: 'user' | 'clock' }) {
-  return (
-    <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm">
-      <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-        {icon === 'user' ? (
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    <div className="detail-card">
+      <div className="detail-top">
+        <button className="close" onClick={onClose} title="Cerrar" aria-label="Cerrar panel">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
           </svg>
-        ) : (
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        )}
-        {titulo}
+        </button>
+        <div className="kicker">Ficha de visado</div>
+        <h3>{med.principioActivo}</h3>
+        <div className="detail-badges">
+          <BadgeVisado tipo={med.tipoVisado} soloMayores75={med.soloMayores75} />
+          {med.soloMayores75 && (
+            <span
+              className="badge"
+              style={{
+                ['--b-bg' as string]: 'var(--accent-soft)',
+                ['--b-ink' as string]: 'var(--accent-ink)',
+                ['--b-dot' as string]: 'var(--accent)',
+              }}
+            >
+              <span className="bdot" />
+              Visado ≥ 75 años
+            </span>
+          )}
+          <button
+            className={`star${isFavorite ? ' on' : ''}`}
+            style={{ marginLeft: 'auto' }}
+            onClick={onToggleFavorite}
+            title={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+            aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+            aria-pressed={isFavorite}
+          >
+            <StarIcon />
+          </button>
+        </div>
       </div>
-      <p className="text-sm leading-snug text-slate-700">{valor}</p>
+
+      <div className="detail-body">
+        <div className="meta-grid">
+          <div className="mrow">
+            <span className="mk">Tipo</span>
+            <span className="mv">
+              {info.label}
+              {med.tipoVisado ? ` — ${info.nombre}` : ''}
+            </span>
+          </div>
+          <div className="mrow">
+            <span className="mk">Prescriptor</span>
+            <span className="mv">{med.prescriptor}</span>
+          </div>
+          <div className="mrow">
+            <span className="mk">Duración</span>
+            <span className="mv">{med.duracion}</span>
+          </div>
+          <div className="mrow">
+            <span className="mk">Presentac.</span>
+            <span className="mv">
+              <span className="brands">{med.presentaciones.join(' · ')}</span>
+            </span>
+          </div>
+        </div>
+
+        {med.indicaciones.length > 0 && (
+          <>
+            <div className="sect-label">
+              Indicaciones autorizadas <span className="rule" />
+            </div>
+            <ol className="ind">
+              {med.indicaciones.map((ind, i) => (
+                <li key={i}>{query ? <Highlight text={ind} query={query} /> : ind}</li>
+              ))}
+            </ol>
+          </>
+        )}
+
+        {med.criteriosValidacion.length > 0 && (
+          <>
+            <div className="sect-label">
+              Criterios a valorar <span className="rule" />
+            </div>
+            <ul className="crit">
+              {med.criteriosValidacion.map((c, i) => (
+                <li key={i}>{c}</li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {med.notas && (
+          <div className="note">
+            <b>Nota. </b>
+            {med.notas}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

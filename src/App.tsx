@@ -3,25 +3,39 @@ import Fuse from 'fuse.js';
 import { Medication, ActiveTab, SearchMode, SearchResult } from './types';
 import { medications } from './data/medications';
 import { useFavorites } from './hooks/useFavorites';
+import { useTheme } from './hooks/useTheme';
+import { prescCat, durCat, tipoKey } from './lib/filters';
 import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
-import { FilterBar, FiltroTipo } from './components/FilterBar';
-import { MedicationCard } from './components/MedicationCard';
+import { FilterRail, FiltroTipo, FiltroPresc, FiltroDur } from './components/FilterRail';
+import { MedicationTable, SortKey } from './components/MedicationTable';
 import { MedicationDetail } from './components/MedicationDetail';
 import { NedGuide } from './components/NedGuide';
 
-const ordenados = [...medications].sort((a, b) =>
-  a.principioActivo.localeCompare(b.principioActivo, 'es')
-);
+const ordenados = [...medications].sort((a, b) => a.principioActivo.localeCompare(b.principioActivo, 'es'));
+const medById = new Map(ordenados.map((m) => [m.id, m]));
+
+const TIPO_ORDER: Record<string, number> = { CPD: 0, 'CPD-E': 1, DH: 2, FR: 3, NA: 4 };
+
+function durOrder(duracion: string): number {
+  if (durCat(duracion) === 'indef') return 100000;
+  const n = duracion.match(/\d+/);
+  return n ? parseInt(n[0], 10) : 99999;
+}
 
 export default function App() {
+  const { theme, toggle: toggleTheme } = useTheme();
+  const { isFavorite, toggle: toggleFav, count: favCount } = useFavorites();
+
   const [tab, setTab] = useState<ActiveTab>('medicamentos');
   const [query, setQuery] = useState('');
   const [searchMode, setSearchMode] = useState<SearchMode>('farmaco');
-  const [filtro, setFiltro] = useState<FiltroTipo>('TODOS');
-  const [seleccionado, setSeleccionado] = useState<Medication | null>(null);
-
-  const { toggle, isFavorite, count: favCount } = useFavorites();
+  const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('all');
+  const [filtroPresc, setFiltroPresc] = useState<FiltroPresc>('all');
+  const [filtroDur, setFiltroDur] = useState<FiltroDur>('all');
+  const [sort, setSort] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const fuseFarmaco = useMemo(
     () =>
@@ -38,7 +52,6 @@ export default function App() {
       }),
     []
   );
-
   const fuseIndicacion = useMemo(
     () =>
       new Fuse(ordenados, {
@@ -54,163 +67,143 @@ export default function App() {
 
   const tieneQuery = query.trim().length >= 2;
 
-  // Resultados de la búsqueda como SearchResult[] (independiente de pestaña/filtro).
   const resultadosBusqueda = useMemo<SearchResult[]>(() => {
     if (!tieneQuery) return ordenados.map((med) => ({ med }));
-
     if (searchMode === 'indicacion') {
       return fuseIndicacion.search(query).map((r) => {
         const match = r.matches?.find((m) => m.key === 'indicaciones');
         const matchedIndicacion =
-          match && typeof match.refIndex === 'number'
-            ? r.item.indicaciones[match.refIndex]
-            : r.item.indicaciones[0];
+          match && typeof match.refIndex === 'number' ? r.item.indicaciones[match.refIndex] : r.item.indicaciones[0];
         return { med: r.item, matchedIndicacion };
       });
     }
-
     return fuseFarmaco.search(query).map((r) => ({ med: r.item }));
   }, [query, searchMode, tieneQuery, fuseFarmaco, fuseIndicacion]);
 
-  // Conjunto base de la pestaña activa (para conteos coherentes).
-  const baseTab = useMemo(
-    () => (tab === 'favoritos' ? ordenados.filter((m) => isFavorite(m.id)) : ordenados),
-    [tab, isFavorite]
+  // Universo = búsqueda + pestaña (para conteos del rail).
+  const universo = useMemo<SearchResult[]>(
+    () => (tab === 'favoritos' ? resultadosBusqueda.filter((r) => isFavorite(r.med.id)) : resultadosBusqueda),
+    [resultadosBusqueda, tab, isFavorite]
   );
 
-  const counts = useMemo(() => {
-    const c: Record<string, number> = {
-      TODOS: baseTab.length,
-      CPD: 0,
-      'CPD-E': 0,
-      DH: 0,
-      FR: 0,
-    };
-    for (const m of baseTab) {
-      if (m.tipoVisado && c[m.tipoVisado] !== undefined) c[m.tipoVisado]++;
+  const { countsTipo, countsPresc, countsDur } = useMemo(() => {
+    const ct: Record<string, number> = { all: 0, CPD: 0, 'CPD-E': 0, DH: 0, FR: 0, NA: 0 };
+    const cp: Record<string, number> = { all: 0, AP: 0, HOSP: 0, ESP: 0 };
+    const cd: Record<string, number> = { all: 0, indef: 0, limit: 0 };
+    for (const { med } of universo) {
+      ct.all++; cp.all++; cd.all++;
+      ct[tipoKey(med)]++;
+      cp[prescCat(med.prescriptor)]++;
+      cd[durCat(med.duracion)]++;
     }
-    return c;
-  }, [baseTab]);
+    return { countsTipo: ct, countsPresc: cp, countsDur: cd };
+  }, [universo]);
 
-  // Pipeline: búsqueda → pestaña (favoritos) → tipo de visado.
   const resultados = useMemo<SearchResult[]>(() => {
-    let res = resultadosBusqueda;
-    if (tab === 'favoritos') res = res.filter((r) => isFavorite(r.med.id));
-    if (filtro !== 'TODOS') res = res.filter((r) => r.med.tipoVisado === filtro);
+    let res = universo;
+    if (filtroTipo !== 'all') res = res.filter((r) => tipoKey(r.med) === filtroTipo);
+    if (filtroPresc !== 'all') res = res.filter((r) => prescCat(r.med.prescriptor) === filtroPresc);
+    if (filtroDur !== 'all') res = res.filter((r) => durCat(r.med.duracion) === filtroDur);
+    if (sort) {
+      const d = sortDir;
+      res = res.slice().sort((a, b) => {
+        if (sort === 'name') return a.med.principioActivo.localeCompare(b.med.principioActivo, 'es') * d;
+        if (sort === 'tipo') return (TIPO_ORDER[tipoKey(a.med)] - TIPO_ORDER[tipoKey(b.med)]) * d;
+        if (sort === 'dur') return (durOrder(a.med.duracion) - durOrder(b.med.duracion)) * d;
+        return 0;
+      });
+    }
     return res;
-  }, [resultadosBusqueda, tab, filtro, isFavorite]);
+  }, [universo, filtroTipo, filtroPresc, filtroDur, sort, sortDir]);
 
-  const esListado = tab === 'medicamentos' || tab === 'favoritos';
+  const onSort = (key: SortKey) => {
+    if (sort === key) setSortDir((d) => (d === 1 ? -1 : 1));
+    else {
+      setSort(key);
+      setSortDir(1);
+    }
+  };
+
+  const seleccionado: Medication | null = selectedId ? medById.get(selectedId) ?? null : null;
+  const detailOpen = seleccionado !== null && tab !== 'ned';
 
   return (
-    <div className="min-h-screen">
+    <>
       <Header
         tab={tab}
         onTabChange={setTab}
         totalMedicamentos={ordenados.length}
         totalFavoritos={favCount}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {esListado ? (
-          <>
-            <div className="mb-5 space-y-4">
-              <SearchBar
-                value={query}
-                onChange={setQuery}
-                resultCount={resultados.length}
-                mode={searchMode}
-                onModeChange={setSearchMode}
-              />
-              <FilterBar activo={filtro} onChange={setFiltro} counts={counts} />
-            </div>
-
-            {tab === 'favoritos' && baseTab.length === 0 ? (
-              <FavoritosVacio />
-            ) : resultados.length === 0 ? (
-              <EmptyState
-                query={query}
-                onReset={() => {
-                  setQuery('');
-                  setFiltro('TODOS');
-                }}
-              />
-            ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {resultados.map(({ med, matchedIndicacion }) => (
-                  <MedicationCard
-                    key={med.id}
-                    med={med}
-                    onClick={() => setSeleccionado(med)}
-                    isFavorite={isFavorite(med.id)}
-                    onToggleFavorite={() => toggle(med.id)}
-                    matchedIndicacion={matchedIndicacion}
-                    query={query}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
+      {tab === 'ned' ? (
+        <main className="layout" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>
           <NedGuide />
-        )}
-      </main>
+        </main>
+      ) : (
+        <>
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            resultCount={resultados.length}
+            total={ordenados.length}
+            mode={searchMode}
+            onModeChange={setSearchMode}
+          />
 
-      <MedicationDetail
-        med={seleccionado}
-        onClose={() => setSeleccionado(null)}
-        isFavorite={seleccionado ? isFavorite(seleccionado.id) : false}
-        onToggleFavorite={seleccionado ? () => toggle(seleccionado.id) : undefined}
-        query={tieneQuery ? query : undefined}
-      />
+          <main className={`layout${detailOpen ? ' detail-open' : ''}`}>
+            <FilterRail
+              tipo={filtroTipo}
+              presc={filtroPresc}
+              dur={filtroDur}
+              onTipo={setFiltroTipo}
+              onPresc={setFiltroPresc}
+              onDur={setFiltroDur}
+              countsTipo={countsTipo}
+              countsPresc={countsPresc}
+              countsDur={countsDur}
+            />
 
-      <footer className="mx-auto max-w-7xl px-4 py-8 text-center sm:px-6 lg:px-8">
-        <p className="text-xs text-slate-400">
-          Datos basados en el documento «Medicamentos sujetos a condiciones restringidas de prescripción y/o dispensación»
-          de larioja.org (act. 04/05/2026). Herramienta de consulta de apoyo; ante cualquier duda, consultar el documento
-          oficial y la normativa vigente.
+            <MedicationTable
+              results={resultados}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFav}
+              sort={sort}
+              sortDir={sortDir}
+              onSort={onSort}
+              query={query}
+              showMatched={tieneQuery && searchMode === 'indicacion'}
+              tab={tab}
+            />
+
+            {detailOpen && seleccionado && (
+              <aside className="detail">
+                <MedicationDetail
+                  med={seleccionado}
+                  onClose={() => setSelectedId(null)}
+                  isFavorite={isFavorite(seleccionado.id)}
+                  onToggleFavorite={() => toggleFav(seleccionado.id)}
+                  query={tieneQuery ? query : undefined}
+                />
+              </aside>
+            )}
+          </main>
+
+          <div className="scrim" onClick={() => setSelectedId(null)} />
+        </>
+      )}
+
+      <footer className="app-foot">
+        <p>
+          Datos basados en el documento «Medicamentos sujetos a condiciones restringidas de prescripción y/o
+          dispensación» de larioja.org (act. 04/05/2026). Herramienta de consulta de apoyo; ante cualquier duda,
+          consultar el documento oficial y la normativa vigente.
         </p>
       </footer>
-    </div>
-  );
-}
-
-function EmptyState({ query, onReset }: { query: string; onReset: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-        <svg className="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-      </div>
-      <p className="text-sm font-medium text-slate-700">Sin resultados</p>
-      <p className="mt-1 max-w-sm text-sm text-slate-500">
-        No se han encontrado medicamentos {query && <>para «<span className="font-medium">{query}</span>»</>} con los
-        filtros actuales.
-      </p>
-      <button
-        onClick={onReset}
-        className="mt-4 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
-      >
-        Limpiar búsqueda y filtros
-      </button>
-    </div>
-  );
-}
-
-function FavoritosVacio() {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
-        <svg className="h-6 w-6 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-        </svg>
-      </div>
-      <p className="text-sm font-medium text-slate-700">Aún no tienes favoritos</p>
-      <p className="mt-1 max-w-sm text-sm text-slate-500">
-        Marca la estrella ☆ en cualquier medicamento para guardarlo aquí y acceder a él rápidamente. Se guardan en este
-        navegador.
-      </p>
-    </div>
+    </>
   );
 }
