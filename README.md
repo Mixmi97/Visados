@@ -62,7 +62,32 @@ npm run build:offline
 Genera `dist/index.html` con todo el JS y el CSS inlineados (mediante
 [`vite-plugin-singlefile`](https://github.com/richardtallent/vite-plugin-singlefile)). Puedes
 renombrarlo (p. ej. `Visados-La-Rioja.html`), copiarlo a cualquier equipo y abrirlo
-directamente en el navegador. Los favoritos se guardan en el `localStorage` de ese navegador.
+directamente en el navegador. Los favoritos y el tema se guardan en el `localStorage` de ese navegador.
+
+### Versión offline protegida con contraseña
+
+Como el archivo es estático (sin servidor que valide credenciales), la protección no puede ser
+un simple aviso: **se cifra todo el contenido**. El HTML resultante no contiene la app en claro,
+solo un bloque cifrado con **AES-256-GCM** cuya clave se deriva de la contraseña con
+**PBKDF2-SHA256** (250 000 iteraciones). Al abrirlo pide la contraseña y descifra la app en el
+propio navegador con la Web Crypto API; sin la contraseña correcta no hay nada legible ni en
+«Ver código fuente». Funciona 100 % offline desde `file://`.
+
+```bash
+VISADOS_PW="tu-contraseña" npm run build:offline:secure
+```
+
+Genera `dist/Visados-La-Rioja.html`, ya protegido. También puede invocarse directamente el
+script sobre un build offline existente:
+
+```bash
+node scripts/encrypt-offline.mjs "tu-contraseña"   # entrada dist/index.html → salida dist/Visados-La-Rioja.html
+```
+
+> Nota: como el descifrado ocurre en el cliente, la protección resiste la inspección casual y
+> el «Ver código fuente», pero la contraseña debe ser robusta: quien tenga el archivo puede
+> intentar adivinarla offline por fuerza bruta. El coste de PBKDF2 la ralentiza, pero no la
+> hace imposible. No es un sustituto de un control de acceso en servidor para datos sensibles.
 
 ## Estructura
 
