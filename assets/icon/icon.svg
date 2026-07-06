@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="grad" x1="0.12" y1="0.05" x2="0.9" y2="0.98">
+      <stop offset="0" stop-color="#a0334a"/>
+      <stop offset="0.55" stop-color="#8a2b3d"/>
+      <stop offset="1" stop-color="#74212f"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.32" cy="0.22" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softshadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#3a0f18" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle con degradado granate de la app -->
+  <rect x="64" y="64" width="896" height="896" rx="205" ry="205" fill="url(#grad)"/>
+  <rect x="64" y="64" width="896" height="896" rx="205" ry="205" fill="url(#sheen)"/>
+  <!-- borde interior sutil -->
+  <rect x="66.5" y="66.5" width="891" height="891" rx="203" ry="203" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="3"/>
+
+  <!-- Escudo blanco (mismo símbolo que la pantalla de acceso) -->
+  <g filter="url(#softshadow)">
+    <path fill="#ffffff" d="M512 292
+      L742 380
+      V548
+      C742 654 648 742 512 792
+      C376 742 282 654 282 548
+      V380
+      Z"/>
+  </g>
+
+  <!-- Check granate -->
+  <path fill="none" stroke="#8a2b3d" stroke-width="58"
+        stroke-linecap="round" stroke-linejoin="round"
+        d="M418 528 L486 596 L612 452"/>
+</svg>
