@@ -146,7 +146,10 @@ nav.tabs::-webkit-scrollbar{display:none;}
 .layout.detail-open{grid-template-columns:236px minmax(0,1fr) 372px;}
 
 /* ---------- SIDEBAR ---------- */
-aside.rail{position:sticky;top:70px;align-self:start;}
+aside.rail{position:sticky;top:112px;align-self:start;max-height:calc(100vh - 186px);overflow-y:auto;overscroll-behavior:contain;padding-right:2px;}
+aside.rail::-webkit-scrollbar{width:8px;}
+aside.rail::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:8px;}
+aside.rail{scrollbar-width:thin;}
 .rail-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px;}
 .rail-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--border);}
 .rail-head h2{margin:0;font-size:11px;font-weight:680;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
@@ -213,8 +216,8 @@ table.meds td{padding:7px 14px;vertical-align:middle;}
 .empty b{color:var(--ink);display:block;font-size:14px;margin-bottom:3px;}
 
 /* ---------- DETAIL PANEL ---------- */
-aside.detail{position:sticky;top:70px;align-self:start;}
-.detail-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;max-height:calc(100vh - 90px);display:flex;flex-direction:column;}
+aside.detail{position:sticky;top:112px;align-self:start;}
+.detail-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;max-height:calc(100vh - 126px);display:flex;flex-direction:column;}
 .detail-top{padding:16px 18px 14px;border-bottom:1px solid var(--border);position:relative;}
 .detail-top .close{position:absolute;top:12px;right:12px;border:none;background:var(--surface-2);color:var(--muted);width:28px;height:28px;border-radius:7px;display:grid;place-items:center;cursor:pointer;}
 .detail-top .close:hover{color:var(--ink);}
