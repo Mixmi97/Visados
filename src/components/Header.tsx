@@ -16,11 +16,9 @@ export function Header({ tab, onTabChange, totalMedicamentos, totalFavoritos, th
       <div className="head-top">
         <div className="brand">
           <span className="logo" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 2.5h8l4 4V21a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 21z" />
-              <path d="M14 2.5V6a1 1 0 0 0 1 1h3.5" />
-              <path d="M9 12.5h6M9 15.5h6M9 9.5h2.5" />
-              <path d="M8.6 18.6l1 1 2-2.2" />
+            <svg viewBox="0 0 24 24">
+              <path fill="#fff" d="M12 3.3 18.8 5.9 V12 C18.8 16.5 15.8 19.7 12 21.4 C8.2 19.7 5.2 16.5 5.2 12 V5.9 Z" />
+              <path fill="none" stroke="#8a2b3d" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" d="M8.7 12.2 11 14.5 15.4 9.7" />
             </svg>
           </span>
           <div className="brand-txt">
