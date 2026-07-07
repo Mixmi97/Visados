@@ -89,6 +89,16 @@ node scripts/encrypt-offline.mjs "tu-contraseña"   # entrada dist/index.html �
 > intentar adivinarla offline por fuerza bruta. El coste de PBKDF2 la ralentiza, pero no la
 > hace imposible. No es un sustituto de un control de acceso en servidor para datos sensibles.
 
+### Icono de la app en Windows
+
+El fichero **`public/Visados.ico`** contiene el símbolo de la app (multirresolución: 16 a 256 px)
+para usarlo en Windows. Como el icono de un archivo `.html` lo fija el navegador asociado y **no**
+se puede cambiar por archivo, la forma correcta de personalizarlo es mediante un **acceso directo**:
+
+1. Botón derecho sobre el `.html` → **Enviar a → Escritorio (crear acceso directo)**.
+2. Botón derecho sobre el acceso directo → **Propiedades** → pestaña *Acceso directo* →
+   **Cambiar icono… → Examinar…** y seleccionar `Visados.ico`.
+
 ## Estructura
 
 ```
